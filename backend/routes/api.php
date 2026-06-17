@@ -13,6 +13,13 @@ use App\Http\Controllers\CourseController; // IMPORT DU CONTRÔLEUR DE FORMATION
 // --- ROUTES PUBLIQUES ---
 Route::post('/login', [AuthController::class, 'login'])->name('login');
 
+// --- ROUTES DE TÉLÉCHARGEMENT PDF TEMPORAIREMENT PUBLIQUES POUR TEST SUR NAVIGATEUR ---
+// Route de téléchargement visuel du reçu d'inscription en PDF
+Route::get('/courses/enrollments/{id}/receipt-pdf', [CourseController::class, 'downloadReceipt']);
+
+// Route de téléchargement visuel de l'attestation de fin de formation en PDF
+Route::get('/courses/enrollments/{id}/certificate-pdf', [CourseController::class, 'downloadCertificate']);
+
 
 // --- ROUTES PROTÉGÉES PAR SANCTUM (Utilisateurs connectés) ---
 Route::middleware('auth:sanctum')->group(function () {
@@ -53,18 +60,12 @@ Route::middleware('auth:sanctum')->group(function () {
 
     // D2 : Inscription d'un apprenant (avec blocage si complet et génération reçu)
     Route::post('/courses/enroll', [CourseController::class, 'enrollClient']);
-    
-    // Route de téléchargement visuel du reçu d'inscription en PDF
-    Route::get('/courses/enrollments/{id}/receipt-pdf', [CourseController::class, 'downloadReceipt']);
 
     // D3 : Émargement / Suivi des présences et absences
     Route::post('/courses/attendance', [CourseController::class, 'saveAttendance']);
 
     // D4 : Vérification textuelle d'éligibilité pour l'attestation (Seuil strict >= 70%)
     Route::get('/courses/enrollments/{id}/certificate', [CourseController::class, 'generateCertificate']);
-    
-    // Route de téléchargement visuel de l'attestation de fin de formation en PDF
-    Route::get('/courses/enrollments/{id}/certificate-pdf', [CourseController::class, 'downloadCertificate']);
     
     // Récupérer l'utilisateur actuellement connecté
     Route::get('/user', function (Request $request) {
