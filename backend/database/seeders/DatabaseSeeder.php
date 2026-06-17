@@ -17,5 +17,6 @@ class DatabaseSeeder extends Seeder
     {
         // On appelle notre UserSeeder pour créer les comptes HorizonApp
         $this->call(UserSeeder::class);
+        $this->call(ProductSeeder::class);
     }
 }
