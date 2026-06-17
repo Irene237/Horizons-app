@@ -7,7 +7,8 @@ use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\ProductController;
 use App\Http\Controllers\SaleController;
 use App\Http\Controllers\ClientController;
-use App\Http\Controllers\PrintOrderController; // IMPORT DU CONTRÔLEUR D'IMPRESSION (MODULE C)
+use App\Http\Controllers\PrintOrderController;
+use App\Http\Controllers\CourseController; // IMPORT DU CONTRÔLEUR DE FORMATIONS (MODULE D)
 
 // --- ROUTES PUBLIQUES ---
 Route::post('/login', [AuthController::class, 'login'])->name('login');
@@ -44,6 +45,26 @@ Route::middleware('auth:sanctum')->group(function () {
     
     // Action spécifique : Modifier le statut (Suivi Kanban : En attente, En production, Prêt, Livré)
     Route::patch('/print-orders/{id}/status', [PrintOrderController::class, 'updateStatus']);
+    
+    // --- MODULE D : GESTION DES FORMATIONS ---
+    // D1 : Catalogue des formations (Lister et Créer)
+    Route::get('/courses', [CourseController::class, 'index']);
+    Route::post('/courses', [CourseController::class, 'storeCourse']);
+
+    // D2 : Inscription d'un apprenant (avec blocage si complet et génération reçu)
+    Route::post('/courses/enroll', [CourseController::class, 'enrollClient']);
+    
+    // Route de téléchargement visuel du reçu d'inscription en PDF
+    Route::get('/courses/enrollments/{id}/receipt-pdf', [CourseController::class, 'downloadReceipt']);
+
+    // D3 : Émargement / Suivi des présences et absences
+    Route::post('/courses/attendance', [CourseController::class, 'saveAttendance']);
+
+    // D4 : Vérification textuelle d'éligibilité pour l'attestation (Seuil strict >= 70%)
+    Route::get('/courses/enrollments/{id}/certificate', [CourseController::class, 'generateCertificate']);
+    
+    // Route de téléchargement visuel de l'attestation de fin de formation en PDF
+    Route::get('/courses/enrollments/{id}/certificate-pdf', [CourseController::class, 'downloadCertificate']);
     
     // Récupérer l'utilisateur actuellement connecté
     Route::get('/user', function (Request $request) {
