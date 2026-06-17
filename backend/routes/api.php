@@ -9,17 +9,10 @@ use App\Http\Controllers\SaleController;
 use App\Http\Controllers\ClientController;
 use App\Http\Controllers\PrintOrderController;
 use App\Http\Controllers\CourseController;
-use App\Http\Controllers\ReportController; // IMPORT DU CONTRÔLEUR DE RAPPORTS & EXPORTS (MODULE E)
+use App\Http\Controllers\ReportController;
 
 // --- ROUTES PUBLIQUES ---
 Route::post('/login', [AuthController::class, 'login'])->name('login');
-
-// --- ROUTES DE TÉLÉCHARGEMENT PDF TEMPORAIREMENT PUBLIQUES POUR TEST SUR NAVIGATEUR ---
-// Route de téléchargement visuel du reçu d'inscription en PDF
-Route::get('/courses/enrollments/{id}/receipt-pdf', [CourseController::class, 'downloadReceipt']);
-
-// Route de téléchargement visuel de l'attestation de fin de formation en PDF
-Route::get('/courses/enrollments/{id}/certificate-pdf', [CourseController::class, 'downloadCertificate']);
 
 
 // --- ROUTES PROTÉGÉES PAR SANCTUM (Utilisateurs connectés) ---
@@ -44,32 +37,23 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::apiResource('clients', ClientController::class);
     
     // --- MODULE C : GESTION DES IMPRESSIONS, TARIFS & DEVIS ---
-    // Récupérer la liste (avec filtres ?status= ou ?is_quotation=) et créer un devis/commande
     Route::get('/print-orders', [PrintOrderController::class, 'index']);
     Route::post('/print-orders', [PrintOrderController::class, 'store']);
-    
-    // Action spécifique : Convertir un devis (is_quotation = true) en commande ferme
     Route::put('/print-orders/{id}/convert', [PrintOrderController::class, 'convertQuotation']);
-    
-    // Action spécifique : Modifier le statut (Suivi Kanban : En attente, En production, Prêt, Livré)
     Route::patch('/print-orders/{id}/status', [PrintOrderController::class, 'updateStatus']);
     
     // --- MODULE D : GESTION DES FORMATIONS ---
-    // D1 : Catalogue des formations (Lister et Créer)
     Route::get('/courses', [CourseController::class, 'index']);
     Route::post('/courses', [CourseController::class, 'storeCourse']);
-
-    // D2 : Inscription d'un apprenant (avec blocage si complet et génération reçu)
     Route::post('/courses/enroll', [CourseController::class, 'enrollClient']);
-
-    // D3 : Émargement / Suivi des présences et absences
     Route::post('/courses/attendance', [CourseController::class, 'saveAttendance']);
-
-    // D4 : Vérification textuelle d'éligibilité pour l'attestation (Seuil strict >= 70%)
     Route::get('/courses/enrollments/{id}/certificate', [CourseController::class, 'generateCertificate']);
     
+    // Routes PDF sécurisées (Déplacées à l'intérieur du groupe Sanctum)
+    Route::get('/courses/enrollments/{id}/receipt-pdf', [CourseController::class, 'downloadReceipt']);
+    Route::get('/courses/enrollments/{id}/certificate-pdf', [CourseController::class, 'downloadCertificate']);
+
     // --- MODULE E : RAPPORTS & EXPORTS STATISTIQUES ---
-    // Récupération JSON, Excel (?format=excel) ou PDF (?format=pdf)
     Route::get('/reports/sales', [ReportController::class, 'salesReport']);
     Route::get('/reports/print-orders', [ReportController::class, 'printReport']);
     Route::get('/reports/courses', [ReportController::class, 'coursesReport']);
