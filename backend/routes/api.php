@@ -8,7 +8,8 @@ use App\Http\Controllers\ProductController;
 use App\Http\Controllers\SaleController;
 use App\Http\Controllers\ClientController;
 use App\Http\Controllers\PrintOrderController;
-use App\Http\Controllers\CourseController; // IMPORT DU CONTRÔLEUR DE FORMATIONS (MODULE D)
+use App\Http\Controllers\CourseController;
+use App\Http\Controllers\ReportController; // IMPORT DU CONTRÔLEUR DE RAPPORTS & EXPORTS (MODULE E)
 
 // --- ROUTES PUBLIQUES ---
 Route::post('/login', [AuthController::class, 'login'])->name('login');
@@ -66,6 +67,12 @@ Route::middleware('auth:sanctum')->group(function () {
 
     // D4 : Vérification textuelle d'éligibilité pour l'attestation (Seuil strict >= 70%)
     Route::get('/courses/enrollments/{id}/certificate', [CourseController::class, 'generateCertificate']);
+    
+    // --- MODULE E : RAPPORTS & EXPORTS STATISTIQUES ---
+    // Récupération JSON, Excel (?format=excel) ou PDF (?format=pdf)
+    Route::get('/reports/sales', [ReportController::class, 'salesReport']);
+    Route::get('/reports/print-orders', [ReportController::class, 'printReport']);
+    Route::get('/reports/courses', [ReportController::class, 'coursesReport']);
     
     // Récupérer l'utilisateur actuellement connecté
     Route::get('/user', function (Request $request) {
