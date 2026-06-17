@@ -9,44 +9,61 @@ use Illuminate\Validation\ValidationException;
 
 class AuthController extends Controller
 {
-    // Fonction de Connexion (Login)
+    /**
+     * Fonction de Connexion (Login)
+     */
     public function login(Request $request)
     {
-        $request->validate([
-            'email' => 'required|email',
-            'password' => 'required',
-        ]);
+        // 1. Validation stricte des entrées
+        try {
+            $request->validate([
+                'email' => 'required|email',
+                'password' => 'required',
+            ]);
+        } catch (ValidationException $e) {
+            return response()->json([
+                'message' => 'Validation échouée',
+                'errors' => $e->errors()
+            ], 422);
+        }
 
-        // Chercher l'utilisateur par son email
+        // 2. Chercher l'utilisateur
         $user = User::where('email', $request->email)->first();
 
-        // Vérifier si l'utilisateur existe et si le mot de passe est correct
-        if (! $user || ! Hash::check($request->password, $user->password)) {
+        // 3. Vérifier les identifiants
+        if (!$user || !Hash::check($request->password, $user->password)) {
             return response()->json([
                 'message' => 'Identifiants incorrects.'
             ], 401);
         }
 
-        // Générer le token de connexion contenant son rôle
-        $token = $user->createToken('auth_token', [$user->role])->plainTextToken;
+        // 4. Générer le token
+        // On s'assure que $user->role existe, sinon on met 'user' par défaut
+        $role = $user->role ?? 'user';
+        $token = $user->createToken('auth_token', [$role])->plainTextToken;
 
+        // 5. Réponse réussie
         return response()->json([
             'message' => 'Connexion réussie',
-            'token' => $token, // CORRIGÉ : Renommé 'access_token' en 'token' pour Flutter
+            'token' => $token,
             'token_type' => 'Bearer',
             'user' => [
                 'name' => $user->name,
                 'email' => $user->email,
-                'role' => $user->role
+                'role' => $role
             ]
         ], 200);
     }
 
-    // Fonction de Déconnexion (Logout)
+    /**
+     * Fonction de Déconnexion (Logout)
+     */
     public function logout(Request $request)
     {
-        // Supprimer le token actuel qui a servi à la requête
-        $request->user()->currentAccessToken()->delete();
+        // Supprime le token de l'utilisateur qui fait la requête
+        if ($request->user()) {
+            $request->user()->currentAccessToken()->delete();
+        }
 
         return response()->json([
             'message' => 'Déconnexion réussie.'
