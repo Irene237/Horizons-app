@@ -1,9 +1,20 @@
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'services/auth_service.dart';
 import 'dashboard_screen.dart';
+import 'providers/cart_provider.dart'; // Décommenté pour l'import
 
-void main() => runApp(const MyApp());
+void main() {
+  runApp(
+    MultiProvider(
+      providers: [
+        ChangeNotifierProvider(create: (_) => CartProvider()), // Décommenté
+      ],
+      child: const MyApp(),
+    ),
+  );
+}
 
 class MyApp extends StatelessWidget {
   const MyApp({super.key});
@@ -20,7 +31,6 @@ class MyApp extends StatelessWidget {
           fillColor: Colors.grey[100],
         ),
       ),
-      // On affiche le Login, et le Login vérifiera s'il doit rediriger
       home: const LoginScreen(),
     );
   }
@@ -37,7 +47,7 @@ class _LoginScreenState extends State<LoginScreen> {
   final TextEditingController emailController = TextEditingController();
   final TextEditingController passwordController = TextEditingController();
   final AuthService authService = AuthService();
-  bool _isLoading = false; // Ajout d'un état de chargement
+  bool _isLoading = false;
 
   @override
   void initState() {
@@ -45,12 +55,14 @@ class _LoginScreenState extends State<LoginScreen> {
     _checkToken();
   }
 
-  // Vérifie si le token est déjà présent
   void _checkToken() async {
     final prefs = await SharedPreferences.getInstance();
     if (prefs.getString('auth_token') != null) {
       if (mounted) {
-        Navigator.pushReplacement(context, MaterialPageRoute(builder: (context) => const DashboardScreen()));
+        Navigator.pushReplacement(
+          context, 
+          MaterialPageRoute(builder: (context) => const DashboardScreen())
+        );
       }
     }
   }
@@ -95,11 +107,11 @@ class _LoginScreenState extends State<LoginScreen> {
                       final prefs = await SharedPreferences.getInstance();
                       await prefs.setString('auth_token', result['token']);
                       
-                      if (context.mounted) {
+                      if (mounted) {
                         Navigator.pushReplacement(context, MaterialPageRoute(builder: (context) => const DashboardScreen()));
                       }
                     } else {
-                      if (context.mounted) {
+                      if (mounted) {
                         ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text("Identifiants incorrects"), backgroundColor: Colors.red));
                       }
                     }

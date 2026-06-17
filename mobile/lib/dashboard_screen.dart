@@ -3,6 +3,8 @@ import 'package:http/http.dart' as http;
 import 'dart:convert';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'screens/product_list_screen.dart'; // Importe ton nouvel écran
+import 'screens/order_list_screen.dart'; // Import ajouté pour l'Écran 5
+
 
 class DashboardScreen extends StatefulWidget {
   const DashboardScreen({super.key});
@@ -61,7 +63,11 @@ class _DashboardScreenState extends State<DashboardScreen> {
             mainAxisSpacing: 16,
             children: [
               _buildStatCard("Ventes jour", "${data['ventes_du_jour']}", Icons.attach_money, null),
-              _buildStatCard("Commandes", "${data['commandes_impression_attente']}", Icons.shopping_cart, null),
+              
+              // Navigation ajoutée ici pour l'écran 5
+              _buildStatCard("Commandes", "${data['commandes_impression_attente']}", Icons.shopping_cart, () {
+                Navigator.push(context, MaterialPageRoute(builder: (context) => const OrderListScreen()));
+              }),
               
               // Ici, on ajoute la navigation sur la carte Stock Critique
               _buildStatCard("Stock Critique", "${data['stock_critique'].length}", Icons.warning, () {

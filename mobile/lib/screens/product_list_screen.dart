@@ -1,6 +1,9 @@
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
 import '../models/product.dart';
 import '../services/product_service.dart';
+import '../providers/cart_provider.dart';
+import 'cart_screen.dart'; // N'oublie pas d'importer ton écran CartScreen
 
 class ProductListScreen extends StatefulWidget {
   const ProductListScreen({super.key});
@@ -31,28 +34,35 @@ class _ProductListScreenState extends State<ProductListScreen> {
       });
     } catch (e) {
       setState(() => _isLoading = false);
-      // Optionnel : afficher un snackbar d'erreur ici
     }
   }
 
   void _runFilter(String enteredKeyword) {
-    List<Product> results = [];
-    if (enteredKeyword.isEmpty) {
-      results = _allProducts;
-    } else {
-      results = _allProducts.where((p) => 
-        // Utilisation de .name et .reference (nouveaux noms)
-        p.name.toLowerCase().contains(enteredKeyword.toLowerCase()) || 
-        p.reference.toLowerCase().contains(enteredKeyword.toLowerCase())
-      ).toList();
-    }
+    List<Product> results = _allProducts.where((p) => 
+      p.name.toLowerCase().contains(enteredKeyword.toLowerCase()) || 
+      p.reference.toLowerCase().contains(enteredKeyword.toLowerCase())
+    ).toList();
     setState(() => _filteredProducts = results);
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text("Stock Produits")),
+      appBar: AppBar(
+        title: const Text("Stock Produits"),
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.shopping_cart),
+            onPressed: () {
+              // Navigation vers CartScreen
+              Navigator.push(
+                context, 
+                MaterialPageRoute(builder: (context) => const CartScreen())
+              );
+            },
+          )
+        ],
+      ),
       body: _isLoading 
         ? const Center(child: CircularProgressIndicator())
         : Column(
@@ -60,7 +70,7 @@ class _ProductListScreenState extends State<ProductListScreen> {
               Padding(
                 padding: const EdgeInsets.all(12.0),
                 child: TextField(
-                  onChanged: (value) => _runFilter(value),
+                  onChanged: _runFilter,
                   decoration: const InputDecoration(labelText: 'Rechercher...', prefixIcon: Icon(Icons.search)),
                 ),
               ),
@@ -72,10 +82,17 @@ class _ProductListScreenState extends State<ProductListScreen> {
                     return Card(
                       color: product.isCritical ? Colors.red[50] : Colors.white,
                       child: ListTile(
-                        // Utilisation de .name
                         title: Text(product.name, style: TextStyle(color: product.isCritical ? Colors.red : Colors.black)),
                         subtitle: Text("Stock: ${product.quantite} | Prix: ${product.prix} FCFA"),
-                        trailing: product.isCritical ? const Icon(Icons.warning, color: Colors.red) : null,
+                        trailing: IconButton(
+                          icon: const Icon(Icons.add_shopping_cart, color: Colors.indigo),
+                          onPressed: () {
+                            Provider.of<CartProvider>(context, listen: false).addToCart(product);
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              SnackBar(content: Text("${product.name} ajouté au panier !"), duration: const Duration(milliseconds: 500)),
+                            );
+                          },
+                        ),
                       ),
                     );
                   },
