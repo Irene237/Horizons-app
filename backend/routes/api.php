@@ -7,12 +7,13 @@ use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\ProductController;
 use App\Http\Controllers\SaleController;
 use App\Http\Controllers\ClientController;
+use App\Http\Controllers\PrintOrderController; // IMPORT DU CONTRÔLEUR D'IMPRESSION (MODULE C)
 
 // --- ROUTES PUBLIQUES ---
 Route::post('/login', [AuthController::class, 'login'])->name('login');
 
 
-// --- ROUTES PROTÉGÉES PAR SANCTUM ---
+// --- ROUTES PROTÉGÉES PAR SANCTUM (Utilisateurs connectés) ---
 Route::middleware('auth:sanctum')->group(function () {
     
     // Déconnexion
@@ -32,6 +33,17 @@ Route::middleware('auth:sanctum')->group(function () {
     
     // Module B3 : CRUD complet des Clients
     Route::apiResource('clients', ClientController::class);
+    
+    // --- MODULE C : GESTION DES IMPRESSIONS, TARIFS & DEVIS ---
+    // Récupérer la liste (avec filtres ?status= ou ?is_quotation=) et créer un devis/commande
+    Route::get('/print-orders', [PrintOrderController::class, 'index']);
+    Route::post('/print-orders', [PrintOrderController::class, 'store']);
+    
+    // Action spécifique : Convertir un devis (is_quotation = true) en commande ferme
+    Route::put('/print-orders/{id}/convert', [PrintOrderController::class, 'convertQuotation']);
+    
+    // Action spécifique : Modifier le statut (Suivi Kanban : En attente, En production, Prêt, Livré)
+    Route::patch('/print-orders/{id}/status', [PrintOrderController::class, 'updateStatus']);
     
     // Récupérer l'utilisateur actuellement connecté
     Route::get('/user', function (Request $request) {
