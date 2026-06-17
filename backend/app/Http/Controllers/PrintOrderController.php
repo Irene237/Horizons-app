@@ -32,7 +32,7 @@ class PrintOrderController extends Controller
     }
 
     /**
-     * 2. CRÉER UN DEVIS OU UNE COMMANDE (Calcul automatique du prix)
+     * 2. CRÉER UN DEVIS OU UNE COMMANDE (Calcul automatique du prix au m² ou à l'unité)
      */
     public function store(Request $request)
     {
@@ -114,7 +114,7 @@ class PrintOrderController extends Controller
 
         // Mutation du devis en commande
         $order->is_quotation = false;
-        // Optionnel : On change le préfixe du numéro de document de DEV- à CMD-
+        // On change le préfixe du numéro de document de DEV- à CMD-
         $order->document_number = str_replace('DEV-', 'CMD-', $order->document_number);
         $order->save();
 
@@ -125,7 +125,7 @@ class PrintOrderController extends Controller
     }
 
     /**
-     * 4. METTRE À JOUR LE STATUT (Pour l'avancement visuel ou Kanban sur Flutter)
+     * 4. METTRE À JOUR LE STATUT (Sécurisé : interdiction d'avancer un devis non converti)
      */
     public function updateStatus(Request $request, $id)
     {
@@ -137,6 +137,13 @@ class PrintOrderController extends Controller
 
         if (!$order) {
             return response()->json(['message' => 'Commande introuvable.'], 404);
+        }
+
+        // SÉCURITÉ : Empêcher de lancer la fabrication ou la livraison si c'est encore un devis
+        if ($order->is_quotation && $request->status !== 'En attente') {
+            return response()->json([
+                'message' => 'Impossible de changer le statut de fabrication. Vous devez d\'abord convertir ce devis en commande ferme.'
+            ], 400);
         }
 
         $order->status = $request->status;
