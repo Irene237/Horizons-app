@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'services/auth_service.dart';
+import 'dashboard_screen.dart'; // Assure-toi que ce fichier existe dans ton dossier lib
 
 void main() => runApp(const MyApp());
 
@@ -10,7 +11,7 @@ class MyApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
-      debugShowCheckedModeBanner: false, // Retire la bannière de debug
+      debugShowCheckedModeBanner: false,
       theme: ThemeData(
         primarySwatch: Colors.indigo,
         inputDecorationTheme: InputDecorationTheme(
@@ -65,9 +66,18 @@ class LoginScreen extends StatelessWidget {
                     if (result != null && result.containsKey('token')) {
                       final prefs = await SharedPreferences.getInstance();
                       await prefs.setString('auth_token', result['token']);
-                      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text("Connexion réussie !")));
+                      
+                      // Succès : Redirection vers le Dashboard
+                      if (context.mounted) {
+                        Navigator.pushReplacement(
+                          context, 
+                          MaterialPageRoute(builder: (context) => const DashboardScreen())
+                        );
+                      }
                     } else {
-                      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text("Identifiants incorrects"), backgroundColor: Colors.red));
+                      if (context.mounted) {
+                        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text("Identifiants incorrects"), backgroundColor: Colors.red));
+                      }
                     }
                   },
                   child: const Text("SE CONNECTER", style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
