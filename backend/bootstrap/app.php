@@ -12,7 +12,10 @@ return Application::configure(basePath: dirname(__DIR__))
         health: '/up',
     )
     ->withMiddleware(function (Middleware $middleware) {
-        // Enregistrement de notre middleware de rôle pour protéger l'API
+        // 1. Activation du CORS pour permettre à Flutter Web de communiquer avec ton API
+        $middleware->append(\Illuminate\Http\Middleware\HandleCors::class);
+
+        // 2. Enregistrement de ton middleware de rôle personnalisé
         $middleware->alias([
             'role' => \App\Http\Middleware\CheckRole::class,
         ]);

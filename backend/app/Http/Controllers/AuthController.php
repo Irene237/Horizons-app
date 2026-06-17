@@ -32,7 +32,7 @@ class AuthController extends Controller
 
         return response()->json([
             'message' => 'Connexion réussie',
-            'access_token' => $token,
+            'token' => $token, // CORRIGÉ : Renommé 'access_token' en 'token' pour Flutter
             'token_type' => 'Bearer',
             'user' => [
                 'name' => $user->name,
