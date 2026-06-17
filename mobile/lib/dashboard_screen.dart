@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'dart:convert';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'screens/product_list_screen.dart'; // Importe ton nouvel écran
 
 class DashboardScreen extends StatefulWidget {
   const DashboardScreen({super.key});
@@ -16,7 +17,6 @@ class _DashboardScreenState extends State<DashboardScreen> {
   @override
   void initState() {
     super.initState();
-    // On appelle l'API une seule fois ici
     _statsFuture = fetchStats();
   }
 
@@ -44,7 +44,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
     return Scaffold(
       appBar: AppBar(title: const Text("Tableau de bord")),
       body: FutureBuilder<Map<String, dynamic>>(
-        future: _statsFuture, // On utilise la variable initialisée
+        future: _statsFuture,
         builder: (context, snapshot) {
           if (snapshot.connectionState == ConnectionState.waiting) {
             return const Center(child: CircularProgressIndicator());
@@ -60,10 +60,15 @@ class _DashboardScreenState extends State<DashboardScreen> {
             crossAxisSpacing: 16,
             mainAxisSpacing: 16,
             children: [
-              _buildStatCard("Ventes jour", "${data['ventes_du_jour']}", Icons.attach_money),
-              _buildStatCard("Commandes", "${data['commandes_impression_attente']}", Icons.shopping_cart),
-              _buildStatCard("Stock Critique", "${data['stock_critique'].length}", Icons.warning, color: Colors.red),
-              _buildStatCard("Formations", "${data['apprenants_inscrits_mois']}", Icons.school, color: Colors.green),
+              _buildStatCard("Ventes jour", "${data['ventes_du_jour']}", Icons.attach_money, null),
+              _buildStatCard("Commandes", "${data['commandes_impression_attente']}", Icons.shopping_cart, null),
+              
+              // Ici, on ajoute la navigation sur la carte Stock Critique
+              _buildStatCard("Stock Critique", "${data['stock_critique'].length}", Icons.warning, () {
+                Navigator.push(context, MaterialPageRoute(builder: (context) => const ProductListScreen()));
+              }, color: Colors.red),
+              
+              _buildStatCard("Formations", "${data['apprenants_inscrits_mois']}", Icons.school, null, color: Colors.green),
             ],
           );
         },
@@ -71,17 +76,22 @@ class _DashboardScreenState extends State<DashboardScreen> {
     );
   }
 
-  Widget _buildStatCard(String title, String value, IconData icon, {Color color = Colors.indigo}) {
+  // Modifié pour accepter une fonction onTap optionnelle
+  Widget _buildStatCard(String title, String value, IconData icon, VoidCallback? onTap, {Color color = Colors.indigo}) {
     return Card(
       elevation: 4,
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          Icon(icon, size: 40, color: color),
-          const SizedBox(height: 8),
-          Text(title, style: const TextStyle(fontWeight: FontWeight.bold)),
-          Text(value, style: const TextStyle(fontSize: 18, color: Colors.indigo, fontWeight: FontWeight.bold)),
-        ],
+      child: InkWell(
+        onTap: onTap, // C'est ici que le clic est géré
+        borderRadius: BorderRadius.circular(4),
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Icon(icon, size: 40, color: color),
+            const SizedBox(height: 8),
+            Text(title, style: const TextStyle(fontWeight: FontWeight.bold)),
+            Text(value, style: const TextStyle(fontSize: 18, color: Colors.indigo, fontWeight: FontWeight.bold)),
+          ],
+        ),
       ),
     );
   }

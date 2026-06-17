@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'services/auth_service.dart';
-import 'dashboard_screen.dart'; // Assure-toi que ce fichier existe dans ton dossier lib
+import 'dashboard_screen.dart';
 
 void main() => runApp(const MyApp());
 
@@ -20,17 +20,40 @@ class MyApp extends StatelessWidget {
           fillColor: Colors.grey[100],
         ),
       ),
-      home: LoginScreen(),
+      // On affiche le Login, et le Login vérifiera s'il doit rediriger
+      home: const LoginScreen(),
     );
   }
 }
 
-class LoginScreen extends StatelessWidget {
+class LoginScreen extends StatefulWidget {
+  const LoginScreen({super.key});
+
+  @override
+  State<LoginScreen> createState() => _LoginScreenState();
+}
+
+class _LoginScreenState extends State<LoginScreen> {
   final TextEditingController emailController = TextEditingController();
   final TextEditingController passwordController = TextEditingController();
   final AuthService authService = AuthService();
+  bool _isLoading = false; // Ajout d'un état de chargement
 
-  LoginScreen({super.key});
+  @override
+  void initState() {
+    super.initState();
+    _checkToken();
+  }
+
+  // Vérifie si le token est déjà présent
+  void _checkToken() async {
+    final prefs = await SharedPreferences.getInstance();
+    if (prefs.getString('auth_token') != null) {
+      if (mounted) {
+        Navigator.pushReplacement(context, MaterialPageRoute(builder: (context) => const DashboardScreen()));
+      }
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -61,18 +84,19 @@ class LoginScreen extends StatelessWidget {
                 height: 50,
                 child: ElevatedButton(
                   style: ElevatedButton.styleFrom(backgroundColor: Colors.indigo, foregroundColor: Colors.white),
-                  onPressed: () async {
+                  onPressed: _isLoading ? null : () async {
+                    setState(() => _isLoading = true);
+                    
                     var result = await authService.login(emailController.text, passwordController.text);
+                    
+                    setState(() => _isLoading = false);
+
                     if (result != null && result.containsKey('token')) {
                       final prefs = await SharedPreferences.getInstance();
                       await prefs.setString('auth_token', result['token']);
                       
-                      // Succès : Redirection vers le Dashboard
                       if (context.mounted) {
-                        Navigator.pushReplacement(
-                          context, 
-                          MaterialPageRoute(builder: (context) => const DashboardScreen())
-                        );
+                        Navigator.pushReplacement(context, MaterialPageRoute(builder: (context) => const DashboardScreen()));
                       }
                     } else {
                       if (context.mounted) {
@@ -80,7 +104,9 @@ class LoginScreen extends StatelessWidget {
                       }
                     }
                   },
-                  child: const Text("SE CONNECTER", style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
+                  child: _isLoading 
+                    ? const CircularProgressIndicator(color: Colors.white)
+                    : const Text("SE CONNECTER", style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
                 ),
               ),
             ],
