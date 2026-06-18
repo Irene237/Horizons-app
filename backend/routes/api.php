@@ -14,6 +14,12 @@ use App\Http\Controllers\ReportController;
 // --- ROUTES PUBLIQUES ---
 Route::post('/login', [AuthController::class, 'login'])->name('login');
 
+// --- ROUTES PDF (Accès spécial via Token dans l'URL) ---
+// On les place en dehors du middleware Sanctum classique pour éviter le rejet 401
+Route::get('/courses/enrollments/{id}/receipt-pdf', [CourseController::class, 'downloadReceipt']);
+Route::get('/courses/enrollments/{id}/invoice-pdf', [CourseController::class, 'downloadInvoice']);
+Route::get('/courses/enrollments/{id}/certificate-pdf', [CourseController::class, 'downloadCertificate']);
+
 // --- ROUTES PROTÉGÉES PAR SANCTUM ---
 Route::middleware('auth:sanctum')->group(function () {
     
@@ -48,13 +54,12 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::post('/courses/enroll', [CourseController::class, 'enrollClient']);
     Route::post('/courses/attendance', [CourseController::class, 'saveAttendance']);
     
-    // PDF et Certificats
+    // Route ajoutée pour le module Profil
+    Route::get('/my-enrollments', [CourseController::class, 'myEnrollments']);
+    
+    // PDF et Certificats (Application)
     Route::get('/courses/enrollments/{id}/certificate', [CourseController::class, 'generateCertificate']);
     
-    // NOTE : Ces routes sont maintenant accessibles par le navigateur via l'URL avec token
-    Route::get('/courses/enrollments/{id}/receipt-pdf', [CourseController::class, 'downloadReceipt']);
-    Route::get('/courses/enrollments/{id}/certificate-pdf', [CourseController::class, 'downloadCertificate']);
-
     // Module E : Rapports
     Route::get('/reports/sales', [ReportController::class, 'salesReport']);
     Route::get('/reports/print-orders', [ReportController::class, 'printReport']);

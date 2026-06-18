@@ -11,6 +11,9 @@ class CourseEnrollment extends Model
 
     protected $fillable = ['course_id', 'client_id', 'payment_status', 'amount_paid', 'receipt_number'];
 
+    // Ajoute ceci pour que 'attendance_rate' soit inclus automatiquement dans le JSON
+    protected $appends = ['attendance_rate'];
+
     public function course()
     {
         return $this->belongsTo(Course::class);
@@ -21,18 +24,21 @@ class CourseEnrollment extends Model
         return $this->belongsTo(Client::class);
     }
 
-    // Relation : Une inscription possède plusieurs fiches de présence
     public function attendances()
     {
         return $this->hasMany(CourseAttendance::class);
     }
 
-    // ALGORITHME DU TAUX DE PRÉSENCE (Retourne un pourcentage, ex: 85.5)
+    /**
+     * Accesseur pour le taux de présence.
+     * Accessible via : $enrollment->attendance_rate
+     */
     public function getAttendanceRateAttribute()
     {
         $totalSessions = $this->attendances()->count();
+        
         if ($totalSessions === 0) {
-            return 0; // Pas encore de sessions d'émargement enregistrées
+            return 0.0;
         }
 
         $presentCount = $this->attendances()->where('is_present', true)->count();

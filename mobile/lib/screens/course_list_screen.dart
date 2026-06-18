@@ -13,6 +13,7 @@ class CourseListScreen extends StatefulWidget {
 class _CourseListScreenState extends State<CourseListScreen> {
   final CourseService _courseService = CourseService();
   late Future<List<Course>> _coursesFuture;
+  bool _isEnrolling = false;
 
   @override
   void initState() {
@@ -23,20 +24,21 @@ class _CourseListScreenState extends State<CourseListScreen> {
   Future<List<Course>> _fetchCourses() async {
     final prefs = await SharedPreferences.getInstance();
     final token = prefs.getString('auth_token') ?? '';
-    debugPrint("Token utilisé pour fetch: $token");
     return await _courseService.getCourses(token);
   }
 
   Future<void> _enroll(int courseId) async {
+    if (_isEnrolling) return;
+
+    setState(() => _isEnrolling = true);
+    
     final prefs = await SharedPreferences.getInstance();
     final token = prefs.getString('auth_token') ?? '';
     
-    debugPrint("Tentative d'inscription pour le cours ID: $courseId");
-
     try {
       await _courseService.enrollInCourse(courseId, token);
-      if (!mounted) return;
       
+      if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text("Inscription réussie !"), backgroundColor: Colors.green),
       );
@@ -45,11 +47,15 @@ class _CourseListScreenState extends State<CourseListScreen> {
         _coursesFuture = _fetchCourses(); 
       });
     } catch (e) {
-      debugPrint("Erreur d'inscription: $e");
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text("Erreur: ${e.toString().replaceAll('Exception: ', '')}"), backgroundColor: Colors.red),
+        SnackBar(
+          content: Text("Erreur: ${e.toString().replaceAll('Exception: ', '')}"), 
+          backgroundColor: Colors.red
+        ),
       );
+    } finally {
+      if (mounted) setState(() => _isEnrolling = false);
     }
   }
 
@@ -59,12 +65,9 @@ class _CourseListScreenState extends State<CourseListScreen> {
       appBar: AppBar(
         title: const Text("Formations disponibles"),
         actions: [
-          // Bouton d'accès à l'Écran 7 (Profil)
           IconButton(
             icon: const Icon(Icons.person),
-            onPressed: () {
-              Navigator.pushNamed(context, '/profile');
-            },
+            onPressed: () => Navigator.pushNamed(context, '/profile'),
           ),
         ],
       ),
@@ -85,7 +88,6 @@ class _CourseListScreenState extends State<CourseListScreen> {
             padding: const EdgeInsets.all(10),
             itemBuilder: (context, index) {
               final course = courses[index];
-              
               return Card(
                 elevation: 4,
                 margin: const EdgeInsets.only(bottom: 15),
@@ -109,20 +111,27 @@ class _CourseListScreenState extends State<CourseListScreen> {
                         ],
                       ),
                       const SizedBox(height: 10),
+                      // Bouton Inscription
                       SizedBox(
                         width: double.infinity,
                         child: ElevatedButton(
-                          onPressed: course.availablePlaces > 0 
-                              ? () => _enroll(course.id) 
-                              : null,
-                          child: const Text("S'INSCRIRE"),
+                          onPressed: (_isEnrolling || course.availablePlaces <= 0) 
+                              ? null 
+                              : () => _enroll(course.id),
+                          child: _isEnrolling 
+                              ? const SizedBox(height: 20, width: 20, child: CircularProgressIndicator(strokeWidth: 2))
+                              : const Text("S'INSCRIRE"),
                         ),
                       ),
                       const SizedBox(height: 10),
-                      OutlinedButton.icon(
-                        onPressed: () => _courseService.downloadPdf(course.id, 'receipt'),
-                        icon: const Icon(Icons.picture_as_pdf),
-                        label: const Text("Télécharger Reçu"),
+                      // Bouton Téléchargement remis ici
+                      SizedBox(
+                        width: double.infinity,
+                        child: OutlinedButton.icon(
+                          onPressed: () => _courseService.downloadPdf(course.id, 'receipt'),
+                          icon: const Icon(Icons.picture_as_pdf),
+                          label: const Text("Télécharger Reçu"),
+                        ),
                       ),
                     ],
                   ),
