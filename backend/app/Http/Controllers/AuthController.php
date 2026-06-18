@@ -27,8 +27,9 @@ class AuthController extends Controller
             ], 422);
         }
 
-        // 2. Chercher l'utilisateur
-        $user = User::where('email', $request->email)->first();
+        // 2. Chercher l'utilisateur avec son client lié
+        // On charge la relation 'client' définie dans le modèle User
+        $user = User::with('client')->where('email', $request->email)->first();
 
         // 3. Vérifier les identifiants
         if (!$user || !Hash::check($request->password, $user->password)) {
@@ -38,7 +39,6 @@ class AuthController extends Controller
         }
 
         // 4. Générer le token
-        // On s'assure que $user->role existe, sinon on met 'user' par défaut
         $role = $user->role ?? 'user';
         $token = $user->createToken('auth_token', [$role])->plainTextToken;
 
@@ -51,7 +51,11 @@ class AuthController extends Controller
                 'name' => $user->name,
                 'email' => $user->email,
                 'role' => $role
-            ]
+            ],
+            // Si la relation client existe, on renvoie son ID, sinon null
+            'client' => $user->client ? [
+                'id' => $user->client->id
+            ] : null
         ], 200);
     }
 
@@ -60,7 +64,7 @@ class AuthController extends Controller
      */
     public function logout(Request $request)
     {
-        // Supprime le token de l'utilisateur qui fait la requête
+        // On supprime uniquement le token utilisé pour cette requête
         if ($request->user()) {
             $request->user()->currentAccessToken()->delete();
         }

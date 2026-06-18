@@ -12,7 +12,6 @@ use Laravel\Sanctum\HasApiTokens;
 class User extends Authenticatable
 {
     /** @use HasFactory<UserFactory> */
-    // ON AJOUTE ICI HasApiTokens POUR ACTIVER LES JETONS DE SÉCURITÉ SANCTUM
     use HasApiTokens, HasFactory, Notifiable;
 
     /**
@@ -24,7 +23,7 @@ class User extends Authenticatable
         'name',
         'email',
         'password',
-        'role', // ON AJOUTE LE CHAMP ROLE ICI POUR COMPLÉTER LE MODULE A1
+        'role',
     ];
 
     /**
@@ -48,5 +47,14 @@ class User extends Authenticatable
             'email_verified_at' => 'datetime',
             'password' => 'hashed',
         ];
+    }
+
+    /**
+     * Relation avec le modèle Client
+     * Cette méthode corrige l'erreur "Call to undefined relationship"
+     */
+    public function client()
+    {
+        return $this->hasOne(Client::class);
     }
 }

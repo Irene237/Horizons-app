@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../models/order.dart';
 import '../services/order_service.dart';
+import 'order_detail_screen.dart'; // Import ajouté pour la navigation
 
 class OrderListScreen extends StatefulWidget {
   const OrderListScreen({super.key});
@@ -28,9 +29,10 @@ class _OrderListScreenState extends State<OrderListScreen> {
 
   Color _getStatusColor(String status) {
     switch (status.toLowerCase()) {
-      case 'pending': return Colors.orange;
-      case 'processing': return Colors.blue;
-      case 'completed': return Colors.green;
+      case 'en attente': return Colors.orange;
+      case 'en production': return Colors.blue;
+      case 'prêt': return Colors.green;
+      case 'livré': return Colors.purple;
       default: return Colors.grey;
     }
   }
@@ -64,6 +66,15 @@ class _OrderListScreenState extends State<OrderListScreen> {
                     label: Text(order.status.toUpperCase(), style: const TextStyle(color: Colors.white, fontSize: 10)),
                     backgroundColor: _getStatusColor(order.status),
                   ),
+                  // Navigation ajoutée ici
+                  onTap: () {
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (context) => OrderDetailScreen(order: order),
+                      ),
+                    );
+                  },
                 ),
               );
             },

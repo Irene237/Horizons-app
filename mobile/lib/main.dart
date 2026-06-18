@@ -3,13 +3,14 @@ import 'package:provider/provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'services/auth_service.dart';
 import 'dashboard_screen.dart';
-import 'providers/cart_provider.dart'; // Décommenté pour l'import
+import 'providers/cart_provider.dart';
+import 'screens/profile_screen.dart'; // Import pour la route profil
 
 void main() {
   runApp(
     MultiProvider(
       providers: [
-        ChangeNotifierProvider(create: (_) => CartProvider()), // Décommenté
+        ChangeNotifierProvider(create: (_) => CartProvider()),
       ],
       child: const MyApp(),
     ),
@@ -31,7 +32,12 @@ class MyApp extends StatelessWidget {
           fillColor: Colors.grey[100],
         ),
       ),
-      home: const LoginScreen(),
+      initialRoute: '/',
+      routes: {
+        '/': (context) => const LoginScreen(),
+        '/dashboard': (context) => const DashboardScreen(),
+        '/profile': (context) => const ProfileScreen(),
+      },
     );
   }
 }
@@ -52,18 +58,13 @@ class _LoginScreenState extends State<LoginScreen> {
   @override
   void initState() {
     super.initState();
-    _checkToken();
+    WidgetsBinding.instance.addPostFrameCallback((_) => _checkToken());
   }
 
   void _checkToken() async {
     final prefs = await SharedPreferences.getInstance();
     if (prefs.getString('auth_token') != null) {
-      if (mounted) {
-        Navigator.pushReplacement(
-          context, 
-          MaterialPageRoute(builder: (context) => const DashboardScreen())
-        );
-      }
+      if (mounted) Navigator.pushReplacementNamed(context, '/dashboard');
     }
   }
 
@@ -99,20 +100,18 @@ class _LoginScreenState extends State<LoginScreen> {
                   onPressed: _isLoading ? null : () async {
                     setState(() => _isLoading = true);
                     
+                    // La sauvegarde du token et du client_id est maintenant gérée DANS AuthService
                     var result = await authService.login(emailController.text, passwordController.text);
                     
                     setState(() => _isLoading = false);
 
                     if (result != null && result.containsKey('token')) {
-                      final prefs = await SharedPreferences.getInstance();
-                      await prefs.setString('auth_token', result['token']);
-                      
-                      if (mounted) {
-                        Navigator.pushReplacement(context, MaterialPageRoute(builder: (context) => const DashboardScreen()));
-                      }
+                      if (mounted) Navigator.pushReplacementNamed(context, '/dashboard');
                     } else {
                       if (mounted) {
-                        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text("Identifiants incorrects"), backgroundColor: Colors.red));
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          const SnackBar(content: Text("Identifiants incorrects"), backgroundColor: Colors.red)
+                        );
                       }
                     }
                   },

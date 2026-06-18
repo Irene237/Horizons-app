@@ -1,14 +1,25 @@
 import 'dart:convert';
+import 'package:flutter/foundation.dart';
 import 'package:http/http.dart' as http;
+import 'package:shared_preferences/shared_preferences.dart';
 
 class AuthService {
-  // Utilise 10.0.2.2 si tu es sur Android Emulator, sinon 127.0.0.1 pour Web/iOS
-  final String baseUrl = "http://127.0.0.1:8000/api";
+  // CONFIGURATION AUTOMATIQUE
+  String get baseUrl {
+    if (kIsWeb) {
+      // Pour Chrome, on utilise localhost
+      return "http://127.0.0.1:8000/api";
+    }
+    // Pour téléphone physique, remplace par l'IP de ton PC (ex: 192.168.1.15)
+    return "http://192.168.1.XX:8000/api"; 
+  }
 
   Future<Map<String, dynamic>?> login(String email, String password) async {
     try {
+      final url = Uri.parse('$baseUrl/login');
+      
       final response = await http.post(
-        Uri.parse('$baseUrl/login'),
+        url,
         headers: {
           'Content-Type': 'application/json',
           'Accept': 'application/json',
@@ -19,28 +30,48 @@ class AuthService {
         }),
       );
 
-      // --- LOG DE DÉBOGAGE POUR DIAGNOSTIC ---
-      print("Statut du serveur : ${response.statusCode}");
-      print("Corps de la réponse : ${response.body}");
+      // DEBUG : Affiche ce qui se passe réellement
+      debugPrint("URL appelée : $url");
+      debugPrint("Code statut : ${response.statusCode}");
+      debugPrint("Réponse : ${response.body}");
 
       if (response.statusCode == 200) {
         final data = jsonDecode(response.body);
-        // On vérifie si la clé 'token' existe réellement
+        
         if (data.containsKey('token')) {
+          final prefs = await SharedPreferences.getInstance();
+          await prefs.setString('auth_token', data['token']);
+          
+          if (data['client'] != null) {
+            await prefs.setInt('client_id', data['client']['id']);
+          }
           return data;
-        } else {
-          print("Erreur : La réponse 200 ne contient pas de token.");
-          return null;
         }
-      } else {
-        // Affiche l'erreur renvoyée par Laravel (souvent des erreurs de validation 422)
-        print("Échec de la connexion : ${response.statusCode}");
-        return null;
       }
-    } catch (e) {
-      // Si le serveur est éteint ou l'URL est mauvaise
-      print("Erreur réseau/exception : $e");
       return null;
+    } catch (e) {
+      debugPrint("Erreur réseau : $e");
+      return null;
+    }
+  }
+
+  Future<void> logout() async {
+    final prefs = await SharedPreferences.getInstance();
+    final token = prefs.getString('auth_token');
+
+    try {
+      await http.post(
+        Uri.parse('$baseUrl/logout'),
+        headers: {
+          'Authorization': 'Bearer $token',
+          'Accept': 'application/json',
+        },
+      );
+    } catch (e) {
+      debugPrint("Erreur logout : $e");
+    } finally {
+      await prefs.remove('auth_token');
+      await prefs.remove('client_id');
     }
   }
 }

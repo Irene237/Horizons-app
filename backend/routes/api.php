@@ -47,7 +47,11 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::post('/courses', [CourseController::class, 'storeCourse']);
     Route::post('/courses/enroll', [CourseController::class, 'enrollClient']);
     Route::post('/courses/attendance', [CourseController::class, 'saveAttendance']);
+    
+    // PDF et Certificats
     Route::get('/courses/enrollments/{id}/certificate', [CourseController::class, 'generateCertificate']);
+    
+    // NOTE : Ces routes sont maintenant accessibles par le navigateur via l'URL avec token
     Route::get('/courses/enrollments/{id}/receipt-pdf', [CourseController::class, 'downloadReceipt']);
     Route::get('/courses/enrollments/{id}/certificate-pdf', [CourseController::class, 'downloadCertificate']);
 

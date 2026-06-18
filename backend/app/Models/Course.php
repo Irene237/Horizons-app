@@ -14,6 +14,12 @@ class Course extends Model
         'trainer_name', 'price', 'max_capacity', 'start_date', 'end_date'
     ];
 
+    protected $casts = [
+    'start_date' => 'date',
+    'end_date' => 'date',
+    'price' => 'decimal:2',
+    ];
+
     // Relation : Une formation a plusieurs inscriptions
     public function enrollments()
     {

@@ -1,0 +1,77 @@
+import 'dart:convert';
+import 'package:flutter/foundation.dart';
+import 'package:http/http.dart' as http;
+import 'package:shared_preferences/shared_preferences.dart';
+import 'package:url_launcher/url_launcher.dart';
+import '../models/course.dart';
+
+class CourseService {
+  String get baseUrl {
+    if (kIsWeb) {
+      return "http://127.0.0.1:8000/api";
+    }
+    return "http://10.0.2.2:8000/api";
+  }
+
+  Future<List<Course>> getCourses(String token) async {
+    final response = await http.get(
+      Uri.parse('$baseUrl/courses'),
+      headers: {
+        'Authorization': 'Bearer $token',
+        'Accept': 'application/json',
+      },
+    );
+
+    if (response.statusCode == 200) {
+      List body = jsonDecode(response.body);
+      return body.map((item) => Course.fromJson(item)).toList();
+    } else {
+      throw Exception('Erreur ${response.statusCode}: Impossible de charger les formations');
+    }
+  }
+
+  // MÉTHODE CORRIGÉE : Inscription incluant le client_id
+  Future<void> enrollInCourse(int courseId, String token) async {
+    final prefs = await SharedPreferences.getInstance();
+    // Récupère l'ID du client stocké lors de la connexion
+    final clientId = prefs.getInt('client_id'); 
+
+    if (clientId == null) {
+      throw Exception('ID client introuvable, veuillez vous reconnecter.');
+    }
+
+    final response = await http.post(
+      Uri.parse('$baseUrl/courses/enroll'),
+      headers: {
+        'Authorization': 'Bearer $token',
+        'Accept': 'application/json',
+        'Content-Type': 'application/json',
+      },
+      body: jsonEncode({
+        'course_id': courseId,
+        'client_id': clientId,
+        'payment_status': 'Non payé', // Valeur par défaut pour l'inscription mobile
+        'amount_paid': 0
+      }),
+    );
+
+    if (response.statusCode != 200 && response.statusCode != 201) {
+      // Extraction du message d'erreur envoyé par Laravel
+      final errorData = jsonDecode(response.body);
+      throw Exception(errorData['message'] ?? 'Erreur lors de l\'inscription');
+    }
+  }
+
+  Future<void> downloadPdf(int enrollmentId, String type) async {
+    final prefs = await SharedPreferences.getInstance();
+    final token = prefs.getString('auth_token') ?? '';
+
+    final url = Uri.parse('$baseUrl/courses/enrollments/$enrollmentId/$type-pdf?token=$token');
+    
+    if (await canLaunchUrl(url)) {
+      await launchUrl(url, mode: LaunchMode.externalApplication);
+    } else {
+      throw Exception('Impossible d\'ouvrir le lien de téléchargement');
+    }
+  }
+}
