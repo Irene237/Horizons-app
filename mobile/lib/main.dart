@@ -100,7 +100,6 @@ class _LoginScreenState extends State<LoginScreen> {
                   onPressed: _isLoading ? null : () async {
                     setState(() => _isLoading = true);
                     
-                    // La sauvegarde du token et du client_id est maintenant gérée DANS AuthService
                     var result = await authService.login(emailController.text, passwordController.text);
                     
                     setState(() => _isLoading = false);
