@@ -36,5 +36,5 @@ HorizonApp est une solution intégrée de gestion interne conçue pour **Horizon
 3. `flutter run`
 
 ## 🔐 Identifiants de Test
-* **Admin :** `admin@horizon.com` / `password`
-* **Formateur :** `formateur@horizon.com` / `password`
+* **Admin :** `admin@horizon.com` / `password123`
+* **Formateur :** `formateur@horizon.com` / `password123`
